@@ -1,0 +1,5 @@
+{
+  "name": "Gerenciador de Franquias",
+  "description": "Um painel de controle para gerenciar franquias de serviços financeiros, incluindo vendas de consórcios e recuperação de crédito (limpa nome).",
+  "requestFramePermissions": []
+}
