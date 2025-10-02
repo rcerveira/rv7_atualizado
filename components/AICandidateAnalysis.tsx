@@ -50,8 +50,15 @@ const AICandidateAnalysis: React.FC<AICandidateAnalysisProps> = ({ lead }) => {
                 **Recomendação:** (Sugira um próximo passo: "Recomendado para aprovação", "Requer análise adicional de documentação", "Agendar entrevista final", etc.).
             `;
 
+            const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY as string | undefined;
+            if (!apiKey) {
+                setError("Recurso de IA desabilitado: configure VITE_GEMINI_API_KEY.");
+                setIsLoading(false);
+                return;
+            }
+
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+                const ai = new GoogleGenAI({ apiKey });
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: prompt,

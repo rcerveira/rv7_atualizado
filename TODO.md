@@ -8,6 +8,8 @@ Este plano rastreia o progresso das mudanças aprovadas.
    - [x] Adicionar react-router-dom ao projeto (package.json) e instalar dependências
    - [x] Criar branch git: blackboxai/router-supabase-vercel
    - [x] Criar index.css vazio para evitar 404 no Vercel
+   - [x] Remover define process.env.* legado do vite.config.ts
+   - [x] Adicionar .env.example com VITE_GEMINI_API_KEY e VITE_SUPABASE_*
 
 2. Roteamento (migrar do HashRouter custom para react-router-dom/HashRouter)
    - [x] App.tsx: remover RouterContext/HashRouterProvider/useHashRouter e usar HashRouter/Routes
@@ -23,11 +25,11 @@ Este plano rastreia o progresso das mudanças aprovadas.
    - [ ] (Fase posterior) Criar services/supabase/* por domínio e migrar DataContext gradualmente
 
 4. IA (fallback opcional)
-   - [ ] Verificar componentes AISummary, AICandidateAnalysis, AINetworkInsights para evitar quebra caso GEMINI_API_KEY ausente (opcional nesta etapa)
+   - [x] Ajustar AISummary, AICandidateAnalysis, AINetworkInsights para usar VITE_GEMINI_API_KEY e exibir fallback quando ausente
 
 5. Build e Deploy
-   - [ ] Executar build local (npm run build) e validar sem erros
-   - [ ] Configurar Vercel com variáveis: GEMINI_API_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+   - [x] Executar build local (npm run build) e validar sem erros
+   - [ ] Configurar Vercel com variáveis: VITE_GEMINI_API_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
    - [ ] Deploy
 
 6. Git
