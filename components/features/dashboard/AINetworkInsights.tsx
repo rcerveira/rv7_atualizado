@@ -47,8 +47,15 @@ const AINetworkInsights: React.FC<AINetworkInsightsProps> = ({ franchisesWithSta
                 Formate a resposta em 3 parágrafos curtos e diretos, sem usar markdown (como títulos ou listas).
             `;
 
+            const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY as string | undefined;
+            if (!apiKey) {
+                setError("Recurso de IA desabilitado: configure VITE_GEMINI_API_KEY.");
+                setIsLoading(false);
+                return;
+            }
+
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+                const ai = new GoogleGenAI({ apiKey });
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: prompt,
