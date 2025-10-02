@@ -105,7 +105,7 @@ INSERT INTO public.tasks (id, franchise_id, lead_id, title, due_date, completed)
   (1, 1, 1, 'Enviar nova proposta para Empresa ABC', '2024-07-19', FALSE),
   (2, 2, 3, 'Preparar simulações para Pedro Costa', '2024-07-18', FALSE),
   (3, 1, 2, 'Realizar pós-venda com Ana Souza', '2024-07-01', TRUE),
-  (4, 1, NULL, 'Organizar documentos do mês', to_date(to_char((now() - interval ''2 days'' ), ''YYYY-MM-DD''), ''YYYY-MM-DD''), FALSE)
+  (4, 1, NULL, 'Organizar documentos do mês', current_date - 2, FALSE)
 ON CONFLICT (id) DO NOTHING;
 
 -- =========================
