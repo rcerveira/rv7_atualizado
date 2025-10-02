@@ -6,11 +6,11 @@ Este plano rastreia o progresso das mudanças aprovadas.
 
 1. Dependências e Infra
    - [x] Adicionar react-router-dom ao projeto (package.json) e instalar dependências
-   - [ ] Criar branch git: blackboxai/router-supabase-vercel
+   - [x] Criar branch git: blackboxai/router-supabase-vercel
    - [x] Criar index.css vazio para evitar 404 no Vercel
 
 2. Roteamento (migrar do HashRouter custom para react-router-dom/HashRouter)
-   - [ ] App.tsx: remover RouterContext/HashRouterProvider/useHashRouter e usar HashRouter/Routes
+   - [x] App.tsx: remover RouterContext/HashRouterProvider/useHashRouter e usar HashRouter/Routes
    - [x] AuthGate.tsx: substituir useHashRouter por useLocation
    - [x] FranchisorDashboard.tsx: substituir useHashRouter por useLocation/useNavigate
    - [x] FranchiseWorkspace.tsx: substituir useHashRouter por useLocation/useNavigate/useParams
