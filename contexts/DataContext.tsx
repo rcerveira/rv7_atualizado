@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import * as api from '../services/dataService';
+import { areSupabaseCredentialsSet, supabase } from '../utils/supabaseClient';
 import {
     Franchise, FranchiseWithStats, Goal, Client, Lead, LeadStatus, LeadNote, Task, PerformanceStatus,
     Transaction, Invoice, Consortium, CreditRecoveryCase, FranchiseUser, SystemUser,
@@ -329,6 +330,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             contracts: data.contracts.filter(c => data.sales.some(s => s.id === c.saleId && s.franchiseId === selectedFranchiseId)),
         };
     }, [selectedFranchiseId, data]);
+
+    const remoteEnabled = useMemo(() => Boolean(areSupabaseCredentialsSet && supabase && user), [user]);
     
     // Handlers
     const handlers = useMemo<Handlers>(() => ({
@@ -347,6 +350,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }));
         },
         addClient: async (clientData) => {
+            if (remoteEnabled) {
+                try {
+                    const created = await api.createClient(clientData);
+                    setData(prev => ({ ...prev!, clients: [...prev!.clients, created] }));
+                    return created;
+                } catch (e) {
+                    console.error('addClient(remote) failed', e);
+                    // fallback local
+                }
+            }
             return new Promise(resolve => {
                 setData(prev => {
                     const newId = Math.max(...prev!.clients.map(c => c.id), 0) + 1;
@@ -362,10 +375,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         },
         updateClient: async (client) => {
-             setData(prev => ({ ...prev!, clients: prev!.clients.map(c => c.id === client.id ? client : c)}));
+            if (remoteEnabled) {
+                try {
+                    const updated = await api.updateClientRecord(client);
+                    setData(prev => ({ ...prev!, clients: prev!.clients.map(c => c.id === updated.id ? updated : c)}));
+                    return;
+                } catch (e) {
+                    console.error('updateClient(remote) failed', e);
+                }
+            }
+            setData(prev => ({ ...prev!, clients: prev!.clients.map(c => c.id === client.id ? client : c)}));
         },
         addLead: async (leadData) => {
-             setData(prev => {
+            if (remoteEnabled) {
+                try {
+                    const created = await api.createLead(leadData);
+                    setData(prev => ({ ...prev!, leads: [...prev!.leads, created] }));
+                    return;
+                } catch (e) {
+                    console.error('addLead(remote) failed', e);
+                }
+            }
+            setData(prev => {
                 const newId = Math.max(...prev!.leads.map(c => c.id), 0) + 1;
                 const newLead: Lead = {
                     ...leadData,
@@ -377,16 +408,50 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         },
         updateLead: async (lead) => {
-             setData(prev => ({ ...prev!, leads: prev!.leads.map(l => l.id === lead.id ? lead : l)}));
+            if (remoteEnabled) {
+                try {
+                    const updated = await api.updateLeadRecord(lead);
+                    setData(prev => ({ ...prev!, leads: prev!.leads.map(l => l.id === updated.id ? updated : l)}));
+                    return;
+                } catch (e) {
+                    console.error('updateLead(remote) failed', e);
+                }
+            }
+            setData(prev => ({ ...prev!, leads: prev!.leads.map(l => l.id === lead.id ? lead : l)}));
         },
         updateLeadStatus: (leadId, newStatus) => {
+            if (remoteEnabled) {
+                const current = data?.leads.find(l => l.id === leadId);
+                if (current) {
+                    (async () => {
+                        try {
+                            const updated = await api.updateLeadRecord({ ...current, status: newStatus });
+                            setData(prev => ({ ...prev!, leads: prev!.leads.map(l => l.id === updated.id ? updated : l)}));
+                        } catch (e) {
+                            console.error('updateLeadStatus(remote) failed', e);
+                        }
+                    })();
+                    return;
+                }
+            }
             setData(prev => ({
                 ...prev!,
                 leads: prev!.leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l)
             }));
         },
         addNote: (note) => {
-             setData(prev => {
+            if (remoteEnabled) {
+                (async () => {
+                    try {
+                        const created = await api.createLeadNote({ ...note, author: user!.name });
+                        setData(prev => ({ ...prev!, leadNotes: [...prev!.leadNotes, created] }));
+                    } catch (e) {
+                        console.error('addNote(remote) failed', e);
+                    }
+                })();
+                return;
+            }
+            setData(prev => {
                 const newId = Math.max(...prev!.leadNotes.map(n => n.id), 0) + 1;
                 const newNote: LeadNote = {
                     ...note,
@@ -398,7 +463,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         },
         addTask: (task) => {
-             setData(prev => {
+            if (remoteEnabled) {
+                (async () => {
+                    try {
+                        const created = await api.createTask(task);
+                        setData(prev => ({ ...prev!, tasks: [...prev!.tasks, created] }));
+                    } catch (e) {
+                        console.error('addTask(remote) failed', e);
+                    }
+                })();
+                return;
+            }
+            setData(prev => {
                 const newId = Math.max(...prev!.tasks.map(t => t.id), 0) + 1;
                 const newTask: Task = {
                     ...task,
@@ -409,7 +485,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         },
         toggleTask: (taskId) => {
-             setData(prev => ({
+            if (remoteEnabled) {
+                const current = data?.tasks.find(t => t.id === taskId);
+                if (current) {
+                    (async () => {
+                        try {
+                            const updated = await api.updateTaskRecord({ id: taskId, completed: !current.completed });
+                            setData(prev => ({ ...prev!, tasks: prev!.tasks.map(t => t.id === taskId ? updated : t)}));
+                        } catch (e) {
+                            console.error('toggleTask(remote) failed', e);
+                        }
+                    })();
+                    return;
+                }
+            }
+            setData(prev => ({
                 ...prev!,
                 tasks: prev!.tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t)
             }));
