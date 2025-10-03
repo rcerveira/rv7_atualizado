@@ -54,9 +54,9 @@ const NetworkPerformanceChart: React.FC<NetworkPerformanceChartProps> = ({ data 
   const renderDot = (props: any) => {
       const { cx, cy, index } = props;
       if (activeIndex === index || clickedIndex === index) {
-        return <circle cx={cx} cy={cy} r={8} stroke="var(--color-secondary)" strokeWidth={3} fill="var(--color-card)" />;
+        return <circle key={`dot-${index}`} cx={cx} cy={cy} r={8} stroke="var(--color-secondary)" strokeWidth={3} fill="var(--color-card)" />;
       }
-      return <circle cx={cx} cy={cy} r={5} stroke="var(--color-secondary)" strokeWidth={2} fill="var(--color-card)" />;
+      return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} stroke="var(--color-secondary)" strokeWidth={2} fill="var(--color-card)" />;
     };
 
   return (

@@ -31,6 +31,7 @@ import SchemaView from './SchemaView';
 import CommunityForumView from './community/CommunityForumView';
 import FranchisorContractTemplatesView from './contracts/FranchisorContractTemplatesView';
 import { useLocation, useNavigate } from 'react-router-dom';
+import BannerStatusConexao from './BannerStatusConexao';
 
 
 type FranchisorTab = 'dashboard' | 'franchises' | 'expansion' | 'financials' | 'audits' | 'training' | 'marketing' | 'communication' | 'forum' | 'reports' | 'settings' | 'schema' | 'contracts';
@@ -192,6 +193,7 @@ const FranchisorDashboard: React.FC = () => {
 
       <main className="lg:pl-64 pt-16 lg:pt-0">
         <div className="p-4 sm:p-8">
+          <BannerStatusConexao />
           {renderContent()}
         </div>
       </main>
