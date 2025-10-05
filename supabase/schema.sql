@@ -248,3 +248,216 @@ END$$;
 
 -- Nota: Sem políticas de INSERT/UPDATE/DELETE para papel anon nesta fase.
 -- Quando migrarmos Auth, criaremos políticas de escrita com base nos papéis e claims (franchise_id).
+
+-- ============================================================
+-- FASE 2 (SEGURO): Auth + RLS forte para CRUD (clients/leads/lead_notes/tasks)
+-- ============================================================
+
+-- 1) Colunas de vínculo com Supabase Auth (uuid do auth.users.id)
+ALTER TABLE public.system_users
+  ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE;
+
+ALTER TABLE public.franchise_users
+  ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE;
+
+-- 2) Funções auxiliares de autorização
+CREATE OR REPLACE FUNCTION public.fn_is_franchisor(uid uuid)
+RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.system_users su
+    WHERE su.auth_user_id = uid
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.fn_user_franchise_id(uid uuid)
+RETURNS BIGINT
+LANGUAGE sql STABLE AS $$
+  SELECT fu.franchise_id
+  FROM public.franchise_users fu
+  WHERE fu.auth_user_id = uid
+  LIMIT 1;
+$$;
+
+-- 3) Remover políticas de leitura pública (Fase 1) para as tabelas de CRUD
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'clients' AND policyname = 'clients_read_all') THEN
+    DROP POLICY clients_read_all ON public.clients;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'leads' AND policyname = 'leads_read_all') THEN
+    DROP POLICY leads_read_all ON public.leads;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'lead_notes' AND policyname = 'lead_notes_read_all') THEN
+    DROP POLICY lead_notes_read_all ON public.lead_notes;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tasks' AND policyname = 'tasks_read_all') THEN
+    DROP POLICY tasks_read_all ON public.tasks;
+  END IF;
+END $$;
+
+-- 4) Políticas RLS (SELECT/INSERT/UPDATE/DELETE) restritas por papel/franquia
+
+-- clients
+CREATE POLICY clients_select ON public.clients
+FOR SELECT
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY clients_insert ON public.clients
+FOR INSERT
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY clients_update ON public.clients
+FOR UPDATE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+)
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY clients_delete ON public.clients
+FOR DELETE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+-- leads
+CREATE POLICY leads_select ON public.leads
+FOR SELECT
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY leads_insert ON public.leads
+FOR INSERT
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY leads_update ON public.leads
+FOR UPDATE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+)
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY leads_delete ON public.leads
+FOR DELETE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+-- lead_notes (por franquia do lead)
+CREATE POLICY lead_notes_select ON public.lead_notes
+FOR SELECT
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  EXISTS (
+    SELECT 1 FROM public.leads l
+    WHERE l.id = lead_id
+      AND l.franchise_id = public.fn_user_franchise_id(auth.uid())
+  )
+);
+
+CREATE POLICY lead_notes_insert ON public.lead_notes
+FOR INSERT
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  EXISTS (
+    SELECT 1 FROM public.leads l
+    WHERE l.id = lead_id
+      AND l.franchise_id = public.fn_user_franchise_id(auth.uid())
+  )
+);
+
+CREATE POLICY lead_notes_update ON public.lead_notes
+FOR UPDATE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  EXISTS (
+    SELECT 1 FROM public.leads l
+    WHERE l.id = lead_id
+      AND l.franchise_id = public.fn_user_franchise_id(auth.uid())
+  )
+)
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  EXISTS (
+    SELECT 1 FROM public.leads l
+    WHERE l.id = lead_id
+      AND l.franchise_id = public.fn_user_franchise_id(auth.uid())
+  )
+);
+
+CREATE POLICY lead_notes_delete ON public.lead_notes
+FOR DELETE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  EXISTS (
+    SELECT 1 FROM public.leads l
+    WHERE l.id = lead_id
+      AND l.franchise_id = public.fn_user_franchise_id(auth.uid())
+  )
+);
+
+-- tasks
+CREATE POLICY tasks_select ON public.tasks
+FOR SELECT
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY tasks_insert ON public.tasks
+FOR INSERT
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY tasks_update ON public.tasks
+FOR UPDATE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+)
+WITH CHECK (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+CREATE POLICY tasks_delete ON public.tasks
+FOR DELETE
+USING (
+  public.fn_is_franchisor(auth.uid()) OR
+  franchise_id = public.fn_user_franchise_id(auth.uid())
+);
+
+-- 5) (Opcional) Conveniência para mapear auth_user_id automaticamente por e-mail
+-- Execute após criar os usuários no Supabase Auth:
+-- UPDATE public.system_users su
+--   SET auth_user_id = au.id
+-- FROM auth.users au
+-- WHERE au.email = su.email;
+
+-- UPDATE public.franchise_users fu
+--   SET auth_user_id = au.id
+-- FROM auth.users au
+-- WHERE au.email = fu.email;

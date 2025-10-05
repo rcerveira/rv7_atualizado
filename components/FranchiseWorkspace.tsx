@@ -22,6 +22,7 @@ import SalesListView from './sales/SalesListView';
 import CreateSaleView from './sales/CreateSaleView';
 import DashboardView from './dashboard/franchisee/DashboardView';
 import { useLocation, useNavigate } from 'react-router-dom';
+import BannerStatusConexao from './BannerStatusConexao';
 
 interface FranchiseWorkspaceProps {
   isFranchiseeView?: boolean;
@@ -227,6 +228,7 @@ const FranchiseWorkspace: React.FC<FranchiseWorkspaceProps> = ({ isFranchiseeVie
             />
             <main className="lg:pl-64 pt-16 lg:pt-0">
                 <div className="p-4 sm:p-8">
+                    <BannerStatusConexao />
                     {renderContent()}
                 </div>
             </main>

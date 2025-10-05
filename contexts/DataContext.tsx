@@ -9,6 +9,7 @@ import React, {
 import { useAuth } from '../hooks/useAuth';
 import * as api from '../services/dataService';
 import { areSupabaseCredentialsSet, supabase } from '../utils/supabaseClient';
+import { useToast } from '../components/ToastProvider';
 import {
     Franchise, FranchiseWithStats, Goal, Client, Lead, LeadStatus, LeadNote, Task, PerformanceStatus,
     Transaction, Invoice, Consortium, CreditRecoveryCase, FranchiseUser, SystemUser,
@@ -162,6 +163,7 @@ const emptyContentData = {
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user } = useAuth();
+    const { notify } = useToast();
     const [data, setData] = useState<AppData | null>(null);
     const [isLoading, setIsLoading] = useState(true); // For core app shell
     const [isContentLoading, setIsContentLoading] = useState(true); // For main view content
@@ -357,6 +359,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     return created;
                 } catch (e) {
                     console.error('addClient(remote) failed', e);
+                    notify({ type: 'error', message: 'Falha ao adicionar cliente no Supabase. Operando no modo local para esta ação.' });
                     // fallback local
                 }
             }
@@ -382,6 +385,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     return;
                 } catch (e) {
                     console.error('updateClient(remote) failed', e);
+                    notify({ type: 'error', message: 'Falha ao atualizar cliente no Supabase. Alteração aplicada localmente.' });
                 }
             }
             setData(prev => ({ ...prev!, clients: prev!.clients.map(c => c.id === client.id ? client : c)}));
@@ -394,6 +398,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     return;
                 } catch (e) {
                     console.error('addLead(remote) failed', e);
+                    notify({ type: 'error', message: 'Falha ao adicionar lead no Supabase. Operação realizada localmente.' });
                 }
             }
             setData(prev => {
@@ -415,6 +420,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     return;
                 } catch (e) {
                     console.error('updateLead(remote) failed', e);
+                    notify({ type: 'error', message: 'Falha ao atualizar lead no Supabase. Alteração aplicada localmente.' });
                 }
             }
             setData(prev => ({ ...prev!, leads: prev!.leads.map(l => l.id === lead.id ? lead : l)}));
@@ -429,6 +435,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             setData(prev => ({ ...prev!, leads: prev!.leads.map(l => l.id === updated.id ? updated : l)}));
                         } catch (e) {
                             console.error('updateLeadStatus(remote) failed', e);
+                            notify({ type: 'error', message: 'Falha ao atualizar status do lead no Supabase. Alteração aplicada localmente.' });
                         }
                     })();
                     return;
@@ -447,6 +454,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setData(prev => ({ ...prev!, leadNotes: [...prev!.leadNotes, created] }));
                     } catch (e) {
                         console.error('addNote(remote) failed', e);
+                        notify({ type: 'error', message: 'Falha ao adicionar anotação no Supabase. Operação realizada localmente.' });
                     }
                 })();
                 return;
@@ -470,6 +478,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setData(prev => ({ ...prev!, tasks: [...prev!.tasks, created] }));
                     } catch (e) {
                         console.error('addTask(remote) failed', e);
+                        notify({ type: 'error', message: 'Falha ao adicionar tarefa no Supabase. Operação realizada localmente.' });
                     }
                 })();
                 return;
@@ -494,6 +503,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             setData(prev => ({ ...prev!, tasks: prev!.tasks.map(t => t.id === taskId ? updated : t)}));
                         } catch (e) {
                             console.error('toggleTask(remote) failed', e);
+                            notify({ type: 'error', message: 'Falha ao atualizar tarefa no Supabase. Alteração aplicada localmente.' });
                         }
                     })();
                     return;

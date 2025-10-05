@@ -39,3 +39,27 @@ Este plano rastreia o progresso das mudanças aprovadas.
 ## Notas
 - Manteremos HashRouter do react-router-dom para facilitar deploy estático sem rewrites na Vercel.
 - Nesta primeira fase, os handlers do DataContext continuam usando initialData (mock) até migração gradual para Supabase.
+
+7. Fase 2 - Secure (Validações e UX)
+   - [x] Banner de Status de Conexão: mostrar Supabase vs DEMO com hostname do projeto quando disponível
+       - [x] components/BannerStatusConexao.tsx criado
+       - [x] Integrado em FranchisorDashboard e FranchiseWorkspace
+   - [x] Corrigir warning de chave única "Dots2" (Recharts)
+       - [x] components/PerformanceChart.tsx: adicionar key nos dots custom (renderDot)
+   - [x] Feedback de erro via toasts nas operações remotas
+       - [x] components/ToastProvider.tsx criado
+       - [x] App.tsx: envolver a aplicação com <ToastProvider>
+       - [x] contexts/DataContext.tsx: usar useToast() para notificar falhas remotas (create/update clients/leads/notes/tasks/status)
+
+8. Fase A - DEMO Override (Auth)
+   - [x] AuthContext.tsx: introduzir supabaseActive (areSupabaseCredentialsSet && supabase && !forceDemoAuth) e aviso via toast quando override ativo
+   - [x] LoginPage.tsx: adicionar controles "Forçar DEMO" e "Usar Supabase" (localStorage.forceDemoAuth)
+   - [x] BannerStatusConexao.tsx: refletir "Modo DEMO (forçado)" quando override está ligado
+   - [x] Garantir preservação do login DEMO mesmo com Supabase configurado
+
+9. Fase B - Dados (prioridade: Leads)
+   - [x] services/dataService.ts: fetchLeads usando Supabase (fallback para mock)
+   - [x] services/dataService.ts: fetchLeadNotes usando Supabase (fallback para mock)
+   - [x] services/dataService.ts: fetchClients usando Supabase (usado nas telas de detalhe de Lead)
+   - [ ] Introduzir @tanstack/react-query (QueryClient, hooks por domínio) — etapa posterior
+   - [ ] Migrar DataContext para consumir hooks por domínio gradualmente

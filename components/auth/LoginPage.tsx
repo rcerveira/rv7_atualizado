@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from '../Logo';
 import { SpinnerIcon, ExclamationTriangleIcon } from '../icons';
+import { areSupabaseCredentialsSet } from '../../utils/supabaseClient';
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -9,6 +10,22 @@ const LoginPage: React.FC = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+    const forceDemoAuth = typeof window !== 'undefined' && localStorage.getItem('forceDemoAuth') === 'true';
+    const supabaseActive = areSupabaseCredentialsSet && !forceDemoAuth;
+
+    const handleForceDemo = () => {
+        try {
+            localStorage.setItem('forceDemoAuth', 'true');
+            window.location.reload();
+        } catch {}
+    };
+
+    const handleUseSupabase = () => {
+        try {
+            localStorage.removeItem('forceDemoAuth');
+            window.location.reload();
+        } catch {}
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,6 +66,44 @@ const LoginPage: React.FC = () => {
                          <Logo className="h-20 w-20 mb-4" />
                         <h2 className="text-3xl font-bold text-center text-text-primary">Bem-vindo(a)!</h2>
                         <p className="text-center text-text-secondary mt-2">Faça login para gerenciar suas operações.</p>
+                        {areSupabaseCredentialsSet ? (
+                            supabaseActive ? (
+                                <span className="mt-2 inline-flex items-center gap-2 text-xs px-2 py-0.5 rounded-full bg-green-100 border border-green-200 text-green-800">
+                                    Autenticação: Supabase
+                                </span>
+                            ) : (
+                                <span className="mt-2 inline-flex items-center gap-2 text-xs px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800">
+                                    Modo DEMO (forçado)
+                                </span>
+                            )
+                        ) : (
+                            <span className="mt-2 inline-flex items-center gap-2 text-xs px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800">
+                                Modo DEMO (sem Supabase)
+                            </span>
+                        )}
+                        {areSupabaseCredentialsSet && (
+                            <div className="mt-2 flex gap-2">
+                                {supabaseActive ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleForceDemo}
+                                        className="text-xs px-2 py-1 rounded border border-amber-300 text-amber-700 hover:bg-amber-50"
+                                        title="Ignorar Supabase e usar dados locais"
+                                    >
+                                        Forçar DEMO
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleUseSupabase}
+                                        className="text-xs px-2 py-1 rounded border border-green-300 text-green-700 hover:bg-green-50"
+                                        title="Voltar a usar Supabase para autenticação e dados"
+                                    >
+                                        Usar Supabase
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <form className="space-y-6" onSubmit={handleLogin}>
